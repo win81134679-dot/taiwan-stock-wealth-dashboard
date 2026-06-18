@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '@/lib/store';
 import { COLOR } from '@/lib/types';
 import { formatPercent, formatSignedCurrency, getColor } from '@/lib/calculator';
@@ -16,14 +16,21 @@ import TradeModal from '@/components/Trade/TradeModal';
 
 export default function Home() {
   const { tickPrices, getPortfolioValue, getPortfolioCost, stocks, realized } = useStore();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     const interval = setInterval(() => {
       tickPrices();
     }, 1100);
 
     return () => clearInterval(interval);
-  }, [tickPrices]);
+  }, [mounted, tickPrices]);
 
   const stats = useMemo(() => {
     const totalValue = getPortfolioValue();
@@ -107,6 +114,12 @@ export default function Home() {
       cardBorder: 'rgba(255,255,255,0.06)',
     },
   ];
+
+  if (!mounted) {
+    return (
+      <div className="relative overflow-hidden min-h-screen bg-[radial-gradient(140%_120%_at_50%_-20%,_#0f1a2c_0%,_#0a111d_55%,_#070c16_100%)]" />
+    );
+  }
 
   return (
     <div className="relative overflow-hidden min-h-screen bg-[radial-gradient(140%_120%_at_50%_-20%,_#0f1a2c_0%,_#0a111d_55%,_#070c16_100%)] px-10 py-12">
