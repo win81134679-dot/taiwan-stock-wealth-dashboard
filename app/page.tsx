@@ -23,11 +23,14 @@ export default function Home() {
   const cash = useStore((s) => s.cash);
   const realized = useStore((s) => s.realized);
   const lastUpdated = useStore((s) => s.lastUpdated);
+  const loadFromCloud = useStore((s) => s.loadFromCloud);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    // 啟動時拉雲端持倉與每日快照(雲端為權威來源)
+    loadFromCloud();
+  }, [loadFromCloud]);
 
   // 真實報價輪詢(盤中 30 秒;只在 mounted 後啟動)
   const { status: marketStatus } = useQuotes();

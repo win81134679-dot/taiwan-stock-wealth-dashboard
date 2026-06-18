@@ -41,23 +41,33 @@ function saveSnapshots(snapshots: NavSnapshot[]): void {
   }
 }
 
-// 記錄當日淨值,回傳更新後的快照陣列
+// 純函式:以日期 upsert 快照(雲端與本機共用,不碰 localStorage)
+export function upsertSnapshot(
+  snapshots: NavSnapshot[],
+  date: string,
+  value: number
+): NavSnapshot[] {
+  if (!Number.isFinite(value) || value <= 0) return snapshots;
+
+  const next = [...snapshots];
+  const last = next[next.length - 1];
+
+  if (last && last.date === date) {
+    next[next.length - 1] = { date, value }; // 更新當日最新
+  } else {
+    next.push({ date, value });
+  }
+
+  return next.slice(-MAX_SNAPSHOTS);
+}
+
+// 記錄當日淨值到 localStorage,回傳更新後的快照陣列
 export function recordSnapshot(value: number): NavSnapshot[] {
   if (!Number.isFinite(value) || value <= 0) return loadSnapshots();
 
-  const today = taipeiToday();
-  const snapshots = loadSnapshots();
-  const last = snapshots[snapshots.length - 1];
-
-  if (last && last.date === today) {
-    last.value = value; // 更新當日最新
-  } else {
-    snapshots.push({ date: today, value });
-  }
-
-  const trimmed = snapshots.slice(-MAX_SNAPSHOTS);
-  saveSnapshots(trimmed);
-  return trimmed;
+  const updated = upsertSnapshot(loadSnapshots(), taipeiToday(), value);
+  saveSnapshots(updated);
+  return updated;
 }
 
 // 30 日績效:回傳最近 N 個「日對日變化%」(漲為正、跌為負)

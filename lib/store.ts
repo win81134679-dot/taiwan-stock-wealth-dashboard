@@ -5,6 +5,7 @@ import { calculateTradeCost } from './calculator';
 import { getStockMeta } from './stock-names';
 import { ClientQuote } from './yahoo-client';
 import { recordSnapshot, NavSnapshot, loadSnapshots } from './snapshots';
+import { loadCloudPortfolio, saveCloudPortfolio } from './portfolio-client';
 
 interface StoreState {
   holdings: Record<string, Holding>;
@@ -40,6 +41,10 @@ interface StoreState {
   recordNav: () => void;
   resetAll: () => void;
   importData: (data: Partial<PersistedState>) => void;
+
+  cloudEnabled: boolean;
+  loadFromCloud: () => Promise<void>;
+  syncToCloud: () => Promise<void>;
 
   getPortfolioValue: () => number;
   getPortfolioCost: () => number;
@@ -77,6 +82,7 @@ export const useStore = create<StoreState>()(
       feeDiscount: 0.6,
       modal: { ...EMPTY_MODAL },
       lastUpdated: 0,
+      cloudEnabled: false,
 
       getPortfolioValue: () => {
         const state = get();
@@ -97,8 +103,14 @@ export const useStore = create<StoreState>()(
       },
 
       setTimeRange: (range) => set({ timeRange: range }),
-      setFeeDiscount: (discount) => set({ feeDiscount: discount }),
-      setCash: (cash) => set({ cash: Math.max(0, cash) }),
+      setFeeDiscount: (discount) => {
+        set({ feeDiscount: discount });
+        get().syncToCloud();
+      },
+      setCash: (cash) => {
+        set({ cash: Math.max(0, cash) });
+        get().syncToCloud();
+      },
 
       openModal: (code, action) => {
         const h = get().holdings[code];
@@ -198,6 +210,7 @@ export const useStore = create<StoreState>()(
             },
             modal: { ...modal, open: false },
           });
+          get().syncToCloud();
         } else {
           if (!existing) {
             set({ modal: { ...modal, open: false } });
@@ -227,6 +240,7 @@ export const useStore = create<StoreState>()(
             realized: newRealized,
             modal: { ...modal, open: false },
           });
+          get().syncToCloud();
         }
       },
 
@@ -249,6 +263,7 @@ export const useStore = create<StoreState>()(
           holdings: newHoldings,
           realized: newRealized,
         });
+        get().syncToCloud();
       },
 
       applyQuotes: (quotes) => {
@@ -288,6 +303,7 @@ export const useStore = create<StoreState>()(
           intradayNav: [],
           modal: { ...EMPTY_MODAL },
         });
+        get().syncToCloud();
       },
 
       importData: (data) => {
@@ -297,6 +313,38 @@ export const useStore = create<StoreState>()(
           realized: data.realized ?? 0,
           snapshots: data.snapshots ?? [],
           feeDiscount: data.feeDiscount ?? 0.6,
+        });
+        get().syncToCloud();
+      },
+
+      // 啟動時拉雲端持倉(雲端為權威來源,覆蓋本機)
+      loadFromCloud: async () => {
+        const { portfolio, cloud } = await loadCloudPortfolio();
+        if (!cloud || !portfolio) {
+          set({ cloudEnabled: false });
+          return;
+        }
+        set({
+          holdings: portfolio.holdings ?? {},
+          cash: portfolio.cash ?? 0,
+          realized: portfolio.realized ?? 0,
+          feeDiscount: portfolio.feeDiscount ?? 0.6,
+          snapshots: portfolio.navSnapshots ?? [],
+          cloudEnabled: true,
+          lastUpdated: Date.now(),
+        });
+      },
+
+      // 交易/現金變動後寫回雲端(最後寫入勝出)
+      syncToCloud: async () => {
+        if (!get().cloudEnabled) return;
+        const state = get();
+        await saveCloudPortfolio({
+          holdings: state.holdings,
+          cash: state.cash,
+          realized: state.realized,
+          feeDiscount: state.feeDiscount,
+          navSnapshots: state.snapshots,
         });
       },
     }),
