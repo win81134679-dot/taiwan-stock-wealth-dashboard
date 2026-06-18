@@ -137,9 +137,10 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-4 gap-6 mb-6">
-          {statCards.map((card) => (
-            <StatCard key={card.key} {...card} />
-          ))}
+          {statCards.map((card) => {
+            const { key, ...cardProps } = card;
+            return <StatCard key={key} {...cardProps} />;
+          })}
         </div>
 
         <PerformanceDots />
