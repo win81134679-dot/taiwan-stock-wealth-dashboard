@@ -13,41 +13,42 @@ import PerformanceDots from '@/components/Stats/PerformanceDots';
 import AllocationDonut from '@/components/Portfolio/AllocationDonut';
 import HoldingsList from '@/components/Portfolio/HoldingsList';
 import TradeModal from '@/components/Trade/TradeModal';
+import BackupBar from '@/components/Layout/BackupBar';
+import { useQuotes } from '@/lib/hooks/useQuotes';
 
 export default function Home() {
-  const { tickPrices, getPortfolioValue, getPortfolioCost, stocks, realized } = useStore();
+  const getPortfolioValue = useStore((s) => s.getPortfolioValue);
+  const getPortfolioCost = useStore((s) => s.getPortfolioCost);
+  const stocks = useStore((s) => s.holdings);
+  const cash = useStore((s) => s.cash);
+  const realized = useStore((s) => s.realized);
+  const lastUpdated = useStore((s) => s.lastUpdated);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (!mounted) return;
-
-    const interval = setInterval(() => {
-      tickPrices();
-    }, 1100);
-
-    return () => clearInterval(interval);
-  }, [mounted, tickPrices]);
+  // 真實報價輪詢(盤中 30 秒;只在 mounted 後啟動)
+  const { status: marketStatus } = useQuotes();
 
   const stats = useMemo(() => {
     const totalValue = getPortfolioValue();
     const costBasis = getPortfolioCost();
     const pnl = totalValue - costBasis;
-    const cumulativeReturn = (pnl / costBasis) * 100;
+    const cumulativeReturn = costBasis > 0 ? (pnl / costBasis) * 100 : 0;
 
-    const dayPnl = Object.values(stocks).reduce((sum, stock) => {
-      return sum + stock.shares * (stock.price - stock.prev);
+    const dayPnl = Object.values(stocks).reduce((sum, h) => {
+      const live = h.price || h.cost;
+      const prev = h.prevClose || h.cost;
+      return sum + h.shares * (live - prev);
     }, 0);
 
-    const dayBase = Object.values(stocks).reduce((sum, stock) => {
-      return sum + stock.shares * stock.prev;
-    }, 0) || 1;
+    const dayBase =
+      Object.values(stocks).reduce((sum, h) => sum + h.shares * (h.prevClose || h.cost), 0) || 1;
 
     const dayPct = (dayPnl / dayBase) * 100;
-    const cashPct = (useStore.getState().cash / totalValue) * 100;
+    const cashPct = totalValue > 0 ? (cash / totalValue) * 100 : 0;
 
     return {
       totalValue,
@@ -59,7 +60,8 @@ export default function Home() {
       cashPct,
       realized,
     };
-  }, [getPortfolioValue, getPortfolioCost, stocks, realized]);
+    // lastUpdated 觸發重算(報價更新後)
+  }, [getPortfolioValue, getPortfolioCost, stocks, cash, realized, lastUpdated]);
 
   const statCards = [
     {
@@ -136,7 +138,9 @@ export default function Home() {
       </div>
 
       <div className="relative z-10 max-w-[1240px] mx-auto">
-        <Header />
+        <Header marketStatus={marketStatus} />
+
+        <BackupBar />
 
         <div className="grid grid-cols-[392px_1fr] gap-6 mb-6">
           <AssetRing

@@ -1,20 +1,33 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { MarketStatus } from '@/lib/hooks/useQuotes';
 
-export default function Header() {
+interface HeaderProps {
+  marketStatus: MarketStatus;
+}
+
+const STATUS_META: Record<MarketStatus, { label: string; color: string }> = {
+  open: { label: '盤中', color: '#3fae84' },
+  pre: { label: '盤前', color: '#d8b86e' },
+  closed: { label: '已收盤', color: '#8d99af' },
+};
+
+export default function Header({ marketStatus }: HeaderProps) {
   const [clock, setClock] = useState('');
 
   useEffect(() => {
     const updateClock = () => {
       const now = new Date();
-      setClock(now.toTimeString().slice(0, 8));
+      setClock(now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Taipei' }));
     };
 
     updateClock();
     const interval = setInterval(updateClock, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const status = STATUS_META[marketStatus];
 
   return (
     <div className="flex items-center gap-4 mb-10">
@@ -46,8 +59,11 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-[rgba(255,255,255,0.08)]">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#3fae84] animate-breathe"></span>
-        <span className="text-sm text-[#9aa6ba] tracking-wide">盤中</span>
+        <span
+          className="w-1.5 h-1.5 rounded-full animate-breathe"
+          style={{ background: status.color }}
+        ></span>
+        <span className="text-sm text-[#9aa6ba] tracking-wide">{status.label}</span>
       </div>
 
       <div className="font-mono font-medium text-[15px] text-[#aeb9cf] tabular-nums tracking-wide">{clock}</div>

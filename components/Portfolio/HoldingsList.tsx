@@ -120,7 +120,11 @@ function RingCanvas({ fraction, code }: { fraction: number; code: string }) {
 }
 
 export default function HoldingsList() {
-  const { stocks, openModal, closePosition, getPortfolioValue } = useStore();
+  const stocks = useStore((s) => s.holdings);
+  const openNewHolding = useStore((s) => s.openNewHolding);
+  const openModal = useStore((s) => s.openModal);
+  const closePosition = useStore((s) => s.closePosition);
+  const getPortfolioValue = useStore((s) => s.getPortfolioValue);
 
   const holdings = useMemo(() => {
     const totalValue = getPortfolioValue();
@@ -128,17 +132,19 @@ export default function HoldingsList() {
     return Object.values(stocks)
       .filter((s) => s.shares > 0)
       .map((stock) => {
-        const change = stock.price - stock.prev;
-        const changePct = (change / stock.prev) * 100;
-        const value = stock.shares * stock.price;
-        const pnl = stock.shares * (stock.price - stock.cost);
-        const weight = (value / totalValue) * 100;
+        const livePrice = stock.price || stock.cost;
+        const prev = stock.prevClose || stock.cost;
+        const change = livePrice - prev;
+        const changePct = prev > 0 ? (change / prev) * 100 : 0;
+        const value = stock.shares * livePrice;
+        const pnl = stock.shares * (livePrice - stock.cost);
+        const weight = totalValue > 0 ? (value / totalValue) * 100 : 0;
         const weightFrac = Math.min(1, weight / 60);
 
         return {
           code: stock.code,
           name: stock.name,
-          price: stock.price.toFixed(2),
+          price: livePrice.toFixed(2),
           changePct: formatPercent(changePct),
           changeColor: getColor(change, COLOR.UP, COLOR.DOWN, COLOR.FLAT),
           value: formatCurrency(value),
@@ -146,7 +152,7 @@ export default function HoldingsList() {
           pnlColor: getColor(pnl, COLOR.UP, COLOR.DOWN, COLOR.FLAT),
           weight: Math.round(weight).toString(),
           weightFrac,
-          history: stock.history,
+          history: stock.intraday && stock.intraday.length > 1 ? stock.intraday : [stock.cost, livePrice],
         };
       })
       .sort((a, b) => parseFloat(b.weight) - parseFloat(a.weight));
@@ -159,13 +165,26 @@ export default function HoldingsList() {
         <div className="flex items-center gap-3">
           <span className="text-[13.5px] text-[#a8b4ca]">依權重</span>
           <button
-            onClick={() => openModal('2330', 'buy')}
+            onClick={openNewHolding}
             className="flex items-center gap-1 px-4 py-1.5 rounded-full border border-[rgba(216,180,110,0.42)] bg-[rgba(216,180,110,0.1)] text-[#edd49c] text-[13px] cursor-pointer hover:bg-[rgba(216,180,110,0.15)] transition-colors"
           >
             ＋ 交易
           </button>
         </div>
       </div>
+
+      {holdings.length === 0 && (
+        <div className="py-14 flex flex-col items-center justify-center text-center gap-3">
+          <div className="text-[15px] text-[#aab6cc]">尚無持股</div>
+          <div className="text-[13px] text-[#8d99af]">點擊右上「＋ 交易」輸入股票代號,開始記錄你的真實持倉</div>
+          <button
+            onClick={openNewHolding}
+            className="mt-2 px-5 py-2 rounded-full border border-[rgba(216,180,110,0.42)] bg-[rgba(216,180,110,0.1)] text-[#edd49c] text-[13px] cursor-pointer hover:bg-[rgba(216,180,110,0.15)] transition-colors"
+          >
+            ＋ 新增第一筆持股
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-col">
         {holdings.map((holding) => (

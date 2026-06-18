@@ -3,25 +3,29 @@
 import { useMemo } from 'react';
 import { useStore } from '@/lib/store';
 import { calculateTradeCost, formatCurrency } from '@/lib/calculator';
+import { fetchSingleQuote } from '@/lib/yahoo-client';
+import { getStockMeta } from '@/lib/stock-names';
 
 export default function TradeModal() {
-  const {
-    modal,
-    stocks,
-    feeDiscount,
-    closeModal,
-    setModalAction,
-    setModalCode,
-    setModalQty,
-    setModalPrice,
-    setFeeDiscount,
-    confirmTrade,
-  } = useStore();
+  const modal = useStore((s) => s.modal);
+  const stocks = useStore((s) => s.holdings);
+  const feeDiscount = useStore((s) => s.feeDiscount);
+  const closeModal = useStore((s) => s.closeModal);
+  const setModalAction = useStore((s) => s.setModalAction);
+  const setModalCode = useStore((s) => s.setModalCode);
+  const setModalQty = useStore((s) => s.setModalQty);
+  const setModalPrice = useStore((s) => s.setModalPrice);
+  const setFeeDiscount = useStore((s) => s.setFeeDiscount);
+  const confirmTrade = useStore((s) => s.confirmTrade);
+  const setLookupCode = useStore((s) => s.setLookupCode);
+  const setLookupPending = useStore((s) => s.setLookupPending);
+  const setLookupError = useStore((s) => s.setLookupError);
+  const applyLookup = useStore((s) => s.applyLookup);
 
   const tradeList = useMemo(() => {
     return Object.values(stocks).map((stock) => ({
       code: stock.code,
-      label: `${stock.code} ${stock.name}${stock.shares > 0 ? `  ・ 持有 ${formatCurrency(stock.shares)} 股` : '  ・ 未持有'}`,
+      label: `${stock.code} ${stock.name} ・ 持有 ${formatCurrency(stock.shares)} 股`,
     }));
   }, [stocks]);
 
@@ -37,6 +41,26 @@ export default function TradeModal() {
 
   const discountLabel = feeDiscount === 1 ? '原價' : Math.round(feeDiscount * 10) + '折';
   const isBuy = modal.action === 'buy';
+  // 是否處於「新增持股」流程:尚未鎖定 code 且無下拉清單可選
+  const isNewHolding = !modal.code;
+
+  const handleLookup = async () => {
+    const raw = modal.lookupCode.trim();
+    if (!raw) return;
+    setLookupPending(true);
+    try {
+      const quote = await fetchSingleQuote(raw);
+      if (quote) {
+        applyLookup(quote);
+      } else {
+        setLookupError('查無此代號,請確認台股代號是否正確');
+      }
+    } catch {
+      setLookupError('查詢失敗,請稍後再試');
+    }
+  };
+
+  const lookedUpName = modal.lookupName || (modal.code ? getStockMeta(modal.code).name : '');
 
   if (!modal.open) return null;
 
@@ -53,20 +77,52 @@ export default function TradeModal() {
           </button>
         </div>
 
-        <div className="mb-4">
-          <div className="text-xs text-[#aab6cc] mb-2">標的</div>
-          <select
-            value={modal.code}
-            onChange={(e) => setModalCode(e.target.value)}
-            className="w-full px-3.5 py-3 rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(7,12,22,0.8)] text-[#e7ecf4] text-sm cursor-pointer hover:border-[rgba(255,255,255,0.15)] transition-colors"
-          >
-            {tradeList.map((item) => (
-              <option key={item.code} value={item.code} className="bg-[#0b1322]">
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {isNewHolding ? (
+          <div className="mb-4">
+            <div className="text-xs text-[#aab6cc] mb-2">股票代號(輸入後查詢真實報價)</div>
+            <div className="flex gap-2">
+              <input
+                value={modal.lookupCode}
+                onChange={(e) => setLookupCode(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleLookup();
+                }}
+                placeholder="例如 2330、6488、0050"
+                className="flex-1 px-3.5 py-3 rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(7,12,22,0.8)] text-[#e7ecf4] font-mono text-[15px] focus:outline-none focus:border-[rgba(216,180,110,0.3)]"
+              />
+              <button
+                onClick={handleLookup}
+                disabled={modal.lookupPending}
+                className="px-4 rounded-xl border border-[rgba(216,180,110,0.42)] bg-[rgba(216,180,110,0.1)] text-[#edd49c] text-[13px] cursor-pointer hover:bg-[rgba(216,180,110,0.15)] transition-colors disabled:opacity-50"
+              >
+                {modal.lookupPending ? '查詢中…' : '查詢'}
+              </button>
+            </div>
+            {modal.lookupError && (
+              <div className="text-[12px] text-[#cf8f88] mt-2">{modal.lookupError}</div>
+            )}
+            {modal.code && lookedUpName && (
+              <div className="text-[13px] text-[#6fc0a0] mt-2">
+                ✓ {modal.code} {lookedUpName} ・ 現價 {modal.price}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="mb-4">
+            <div className="text-xs text-[#aab6cc] mb-2">標的</div>
+            <select
+              value={modal.code}
+              onChange={(e) => setModalCode(e.target.value)}
+              className="w-full px-3.5 py-3 rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(7,12,22,0.8)] text-[#e7ecf4] text-sm cursor-pointer hover:border-[rgba(255,255,255,0.15)] transition-colors"
+            >
+              {tradeList.map((item) => (
+                <option key={item.code} value={item.code} className="bg-[#0b1322]">
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="flex gap-2.5 mb-4">
           <button
@@ -165,7 +221,8 @@ export default function TradeModal() {
           </button>
           <button
             onClick={confirmTrade}
-            className="flex-[1.5] py-3 rounded-2xl border-none text-[#0b1322] font-semibold text-[15px] cursor-pointer hover:opacity-90 transition-opacity"
+            disabled={!modal.code}
+            className="flex-[1.5] py-3 rounded-2xl border-none text-[#0b1322] font-semibold text-[15px] cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ background: isBuy ? '#cf7b73' : '#54b48f' }}
           >
             {isBuy ? '確認買進' : '確認賣出'}

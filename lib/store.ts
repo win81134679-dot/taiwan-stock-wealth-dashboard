@@ -1,67 +1,88 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Portfolio, Stock, TradeModalState } from './types';
-import { DEFAULT_STOCKS, initializeStock, updateStockPrice, generate30DayPerformance } from './simulator';
+import { Holding, TradeModalState } from './types';
 import { calculateTradeCost } from './calculator';
+import { getStockMeta } from './stock-names';
+import { ClientQuote } from './yahoo-client';
+import { recordSnapshot, NavSnapshot, loadSnapshots } from './snapshots';
 
-interface StoreState extends Portfolio {
+interface StoreState {
+  holdings: Record<string, Holding>;
+  cash: number;
+  realized: number;
+  snapshots: NavSnapshot[];
+  intradayNav: number[];
+
   timeRange: '1D' | '1W' | '1M' | '1Y';
   feeDiscount: number;
   modal: TradeModalState;
-  sessionPoints: number;
+  lastUpdated: number;
 
   setTimeRange: (range: '1D' | '1W' | '1M' | '1Y') => void;
   setFeeDiscount: (discount: number) => void;
+  setCash: (cash: number) => void;
+
   openModal: (code: string, action: 'buy' | 'sell') => void;
+  openNewHolding: () => void;
   closeModal: () => void;
   setModalAction: (action: 'buy' | 'sell') => void;
   setModalCode: (code: string) => void;
   setModalQty: (qty: string) => void;
   setModalPrice: (price: string) => void;
+  setLookupCode: (code: string) => void;
+  applyLookup: (quote: ClientQuote) => void;
+  setLookupPending: (pending: boolean) => void;
+  setLookupError: (error: string) => void;
   confirmTrade: () => void;
   closePosition: (code: string) => void;
-  tickPrices: () => void;
-  resetPortfolio: () => void;
+
+  applyQuotes: (quotes: ClientQuote[]) => void;
+  recordNav: () => void;
+  resetAll: () => void;
+  importData: (data: Partial<PersistedState>) => void;
+
   getPortfolioValue: () => number;
   getPortfolioCost: () => number;
 }
 
-const DEFAULT_CASH = 1180000;
-const DEFAULT_REALIZED = 486000;
-const SESSION_POINTS = 80;
-
-function createInitialStocks(): Record<string, Stock> {
-  const stocks: Record<string, Stock> = {};
-  DEFAULT_STOCKS.forEach((base) => {
-    stocks[base.code] = initializeStock(base);
-  });
-  return stocks;
+interface PersistedState {
+  holdings: Record<string, Holding>;
+  cash: number;
+  realized: number;
+  snapshots: NavSnapshot[];
+  feeDiscount: number;
 }
+
+const EMPTY_MODAL: TradeModalState = {
+  open: false,
+  code: '',
+  action: 'buy',
+  qty: '',
+  price: '',
+  lookupCode: '',
+  lookupName: '',
+  lookupPending: false,
+  lookupError: '',
+};
 
 export const useStore = create<StoreState>()(
   persist(
     (set, get) => ({
-      stocks: createInitialStocks(),
-      cash: DEFAULT_CASH,
-      realized: DEFAULT_REALIZED,
-      assetHistory: [],
-      daily30: generate30DayPerformance(),
+      holdings: {},
+      cash: 0,
+      realized: 0,
+      snapshots: [],
+      intradayNav: [],
       timeRange: '1D',
       feeDiscount: 0.6,
-      modal: {
-        open: false,
-        code: '2330',
-        action: 'buy',
-        qty: '',
-        price: '',
-      },
-      sessionPoints: SESSION_POINTS,
+      modal: { ...EMPTY_MODAL },
+      lastUpdated: 0,
 
       getPortfolioValue: () => {
         const state = get();
         let value = state.cash;
-        Object.values(state.stocks).forEach((stock) => {
-          value += stock.shares * stock.price;
+        Object.values(state.holdings).forEach((h) => {
+          value += h.shares * (h.price || h.cost);
         });
         return value;
       },
@@ -69,111 +90,140 @@ export const useStore = create<StoreState>()(
       getPortfolioCost: () => {
         const state = get();
         let cost = state.cash;
-        Object.values(state.stocks).forEach((stock) => {
-          cost += stock.shares * stock.cost;
+        Object.values(state.holdings).forEach((h) => {
+          cost += h.shares * h.cost;
         });
         return cost;
       },
 
       setTimeRange: (range) => set({ timeRange: range }),
-
       setFeeDiscount: (discount) => set({ feeDiscount: discount }),
+      setCash: (cash) => set({ cash: Math.max(0, cash) }),
 
       openModal: (code, action) => {
-        const state = get();
-        const stock = state.stocks[code];
+        const h = get().holdings[code];
         set({
           modal: {
+            ...EMPTY_MODAL,
             open: true,
             code,
             action,
-            qty: '',
-            price: stock.price.toFixed(2),
+            price: h ? (h.price || h.cost).toFixed(2) : '',
           },
         });
       },
 
-      closeModal: () => {
-        set((state) => ({
-          modal: { ...state.modal, open: false },
-        }));
+      openNewHolding: () => {
+        set({ modal: { ...EMPTY_MODAL, open: true, action: 'buy' } });
       },
 
-      setModalAction: (action) => {
-        set((state) => ({
-          modal: { ...state.modal, action },
-        }));
-      },
-
+      closeModal: () => set((state) => ({ modal: { ...state.modal, open: false } })),
+      setModalAction: (action) => set((state) => ({ modal: { ...state.modal, action } })),
       setModalCode: (code) => {
-        const state = get();
-        const stock = state.stocks[code];
-        set({
+        const h = get().holdings[code];
+        set((state) => ({
+          modal: { ...state.modal, code, price: h ? (h.price || h.cost).toFixed(2) : state.modal.price },
+        }));
+      },
+      setModalQty: (qty) => set((state) => ({ modal: { ...state.modal, qty } })),
+      setModalPrice: (price) => set((state) => ({ modal: { ...state.modal, price } })),
+
+      setLookupCode: (code) =>
+        set((state) => ({ modal: { ...state.modal, lookupCode: code, lookupError: '' } })),
+      setLookupPending: (pending) =>
+        set((state) => ({ modal: { ...state.modal, lookupPending: pending } })),
+      setLookupError: (error) =>
+        set((state) => ({ modal: { ...state.modal, lookupError: error, lookupPending: false } })),
+
+      applyLookup: (quote) => {
+        const meta = getStockMeta(quote.code);
+        set((state) => ({
           modal: {
             ...state.modal,
-            code,
-            price: stock.price.toFixed(2),
+            code: quote.code,
+            lookupName: meta.name,
+            lookupPending: false,
+            lookupError: '',
+            price: quote.price.toFixed(2),
           },
-        });
-      },
-
-      setModalQty: (qty) => {
-        set((state) => ({
-          modal: { ...state.modal, qty },
-        }));
-      },
-
-      setModalPrice: (price) => {
-        set((state) => ({
-          modal: { ...state.modal, price },
+          // 預先把報價寫入 holdings 的即時欄位(若已存在)
+          holdings: state.holdings[quote.code]
+            ? {
+                ...state.holdings,
+                [quote.code]: {
+                  ...state.holdings[quote.code],
+                  price: quote.price,
+                  prevClose: quote.prevClose,
+                  intraday: quote.intraday,
+                },
+              }
+            : state.holdings,
         }));
       },
 
       confirmTrade: () => {
         const state = get();
-        const { modal, stocks, cash, realized, feeDiscount } = state;
-        const stock = stocks[modal.code];
+        const { modal, holdings, cash, realized, feeDiscount } = state;
+        const code = modal.code;
+        if (!code) return;
 
         const cost = calculateTradeCost(modal.action, modal.qty, modal.price, feeDiscount);
         if (cost.qty <= 0 || cost.price <= 0) return;
 
+        const existing = holdings[code];
+        const meta = getStockMeta(code);
+
+        // 記帳語意:買股「登記持倉」不動現金;賣股計入已實現損益但不加現金。
+        // 現金部位由使用者透過上方「現金部位 ✎」手動維護。
         if (modal.action === 'buy') {
-          const newShares = stock.shares + cost.qty;
-          const newCost = (stock.shares * stock.cost + cost.qty * cost.price + cost.fee) / newShares;
+          const prevShares = existing?.shares ?? 0;
+          const prevCost = existing?.cost ?? 0;
+          const newShares = prevShares + cost.qty;
+          // 加權平均成本含手續費攤入
+          const newAvgCost = (prevShares * prevCost + cost.qty * cost.price + cost.fee) / newShares;
 
           set({
-            stocks: {
-              ...stocks,
-              [modal.code]: {
-                ...stock,
+            holdings: {
+              ...holdings,
+              [code]: {
+                code,
+                name: existing?.name || modal.lookupName || meta.name,
+                sector: existing?.sector || meta.sector,
                 shares: newShares,
-                cost: newCost,
+                cost: newAvgCost,
+                price: existing?.price || cost.price,
+                prevClose: existing?.prevClose || cost.price,
+                intraday: existing?.intraday || [cost.price],
               },
             },
-            cash: cash - cost.net,
             modal: { ...modal, open: false },
           });
         } else {
-          const sellQty = Math.min(cost.qty, stock.shares);
+          if (!existing) {
+            set({ modal: { ...modal, open: false } });
+            return;
+          }
+          const sellQty = Math.min(cost.qty, existing.shares);
           if (sellQty <= 0) {
             set({ modal: { ...modal, open: false } });
             return;
           }
-
           const amount = sellQty * cost.price;
           const fee = Math.max(20, Math.round(amount * 0.001425 * feeDiscount));
           const tax = Math.round(amount * 0.003);
-          const newRealized = realized + sellQty * (cost.price - stock.cost) - fee - tax;
+          // 已實現損益 = 賣出價差 − 手續費 − 證交稅(獨立追蹤,不動現金部位)
+          const newRealized = realized + sellQty * (cost.price - existing.cost) - fee - tax;
+          const remainShares = existing.shares - sellQty;
+
+          const newHoldings = { ...holdings };
+          if (remainShares <= 0) {
+            delete newHoldings[code];
+          } else {
+            newHoldings[code] = { ...existing, shares: remainShares };
+          }
 
           set({
-            stocks: {
-              ...stocks,
-              [modal.code]: {
-                ...stock,
-                shares: stock.shares - sellQty,
-              },
-            },
-            cash: cash + amount - fee - tax,
+            holdings: newHoldings,
             realized: newRealized,
             modal: { ...modal, open: false },
           });
@@ -182,77 +232,88 @@ export const useStore = create<StoreState>()(
 
       closePosition: (code) => {
         const state = get();
-        const stock = state.stocks[code];
-        if (stock.shares <= 0) return;
+        const h = state.holdings[code];
+        if (!h || h.shares <= 0) return;
 
-        const amount = stock.shares * stock.price;
+        const price = h.price || h.cost;
+        const amount = h.shares * price;
         const fee = Math.max(20, Math.round(amount * 0.001425 * state.feeDiscount));
         const tax = Math.round(amount * 0.003);
-        const newRealized = state.realized + stock.shares * (stock.price - stock.cost) - fee - tax;
+        // 平倉計入已實現損益,不動現金部位(與賣出語意一致)
+        const newRealized = state.realized + h.shares * (price - h.cost) - fee - tax;
+
+        const newHoldings = { ...state.holdings };
+        delete newHoldings[code];
 
         set({
-          stocks: {
-            ...state.stocks,
-            [code]: {
-              ...stock,
-              shares: 0,
-            },
-          },
-          cash: state.cash + amount - fee - tax,
+          holdings: newHoldings,
           realized: newRealized,
         });
       },
 
-      tickPrices: () => {
+      applyQuotes: (quotes) => {
         set((state) => {
-          if (state.modal.open) return state;
-
-          const newStocks: Record<string, Stock> = {};
-          Object.entries(state.stocks).forEach(([code, stock]) => {
-            newStocks[code] = updateStockPrice(stock);
+          const newHoldings = { ...state.holdings };
+          quotes.forEach((q) => {
+            const h = newHoldings[q.code];
+            if (h) {
+              newHoldings[q.code] = {
+                ...h,
+                price: q.price,
+                prevClose: q.prevClose,
+                intraday: q.intraday,
+              };
+            }
           });
-
-          const portfolioValue = state.cash + Object.values(newStocks).reduce(
-            (sum, stock) => sum + stock.shares * stock.price,
-            0
-          );
-
-          let newHistory = [...state.assetHistory];
-          if (newHistory.length === 0) {
-            newHistory = [portfolioValue, portfolioValue];
-          } else if (newHistory.length < state.sessionPoints) {
-            newHistory.push(portfolioValue);
-          } else {
-            newHistory[newHistory.length - 1] = portfolioValue;
-          }
-
-          return {
-            stocks: newStocks,
-            assetHistory: newHistory,
-          };
+          return { holdings: newHoldings, lastUpdated: Date.now() };
         });
       },
 
-      resetPortfolio: () => {
+      recordNav: () => {
+        const value = get().getPortfolioValue();
+        if (value <= 0) return;
+        const snapshots = recordSnapshot(value);
+        set((state) => {
+          const intraday = [...state.intradayNav, value].slice(-200);
+          return { snapshots, intradayNav: intraday };
+        });
+      },
+
+      resetAll: () => {
         set({
-          stocks: createInitialStocks(),
-          cash: DEFAULT_CASH,
-          realized: DEFAULT_REALIZED,
-          assetHistory: [],
-          daily30: generate30DayPerformance(),
+          holdings: {},
+          cash: 0,
+          realized: 0,
+          snapshots: [],
+          intradayNav: [],
+          modal: { ...EMPTY_MODAL },
+        });
+      },
+
+      importData: (data) => {
+        set({
+          holdings: data.holdings ?? {},
+          cash: data.cash ?? 0,
+          realized: data.realized ?? 0,
+          snapshots: data.snapshots ?? [],
+          feeDiscount: data.feeDiscount ?? 0.6,
         });
       },
     }),
     {
-      name: 'taiwan-stock-portfolio',
+      name: 'tw-stock-portfolio-v2', // 新 key:自動忽略舊模擬版假資料
       partialize: (state) => ({
-        stocks: state.stocks,
+        holdings: state.holdings,
         cash: state.cash,
         realized: state.realized,
-        assetHistory: state.assetHistory,
-        daily30: state.daily30,
+        snapshots: state.snapshots,
         feeDiscount: state.feeDiscount,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.snapshots = loadSnapshots();
+        }
+      },
     }
   )
 );
