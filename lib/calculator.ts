@@ -46,3 +46,15 @@ export function formatSignedCurrency(n: number): string {
 export function getColor(n: number, upColor: string, downColor: string, flatColor: string): string {
   return n > 0 ? upColor : n < 0 ? downColor : flatColor;
 }
+
+export function hexToRgba(hex: string, alpha: number): string {
+  const cleaned = hex.replace('#', '');
+  const full = cleaned.length === 3
+    ? cleaned.split('').map((c) => c + c).join('')
+    : cleaned;
+  const num = parseInt(full, 16);
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r},${g},${b},${alpha})`;
+}

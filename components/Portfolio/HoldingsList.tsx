@@ -3,7 +3,7 @@
 import { useMemo, useRef, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { COLOR } from '@/lib/types';
-import { formatCurrency, formatPercent, formatSignedCurrency, getColor } from '@/lib/calculator';
+import { formatCurrency, formatPercent, formatSignedCurrency, getColor, hexToRgba } from '@/lib/calculator';
 
 function SparklineCanvas({ history, code }: { history: number[]; code: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -42,8 +42,8 @@ function SparklineCanvas({ history, code }: { history: number[]; code: string })
     const color = history[history.length - 1] >= history[0] ? COLOR.UP : COLOR.DOWN;
 
     const gradient = ctx.createLinearGradient(0, 0, 0, h);
-    gradient.addColorStop(0, color.replace('#', 'rgba(') + ',0.22)');
-    gradient.addColorStop(1, color.replace('#', 'rgba(') + ',0)');
+    gradient.addColorStop(0, hexToRgba(color, 0.22));
+    gradient.addColorStop(1, hexToRgba(color, 0));
 
     ctx.beginPath();
     ctx.moveTo(X(0), Y(history[0]));
