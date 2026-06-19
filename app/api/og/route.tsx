@@ -1,4 +1,4 @@
-// OG 圖動態生成 (Next.js 16 ImageResponse)
+// OG 圖動態生成 - 極簡風格
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
@@ -11,75 +11,106 @@ export async function GET() {
           height: '100%',
           width: '100%',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
-          background: 'linear-gradient(135deg, #0f1419 0%, #1a1f29 100%)',
+          justifyContent: 'space-between',
+          background: '#d8b46e',
+          padding: '80px',
           fontFamily: 'sans-serif',
         }}
       >
-        {/* 主視覺圓環 */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '280px',
-            height: '280px',
-            borderRadius: '50%',
-            border: '8px solid rgba(216,180,110,0.3)',
-            background: 'linear-gradient(to bottom, rgba(255,255,255,0.03), transparent)',
-            marginBottom: '48px',
-          }}
-        >
+        {/* 左側:圖示 + 標題 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
+          {/* 圖示 (與 PWA icon 一致) */}
           <div
             style={{
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
-              color: '#f4e3b8',
+              justifyContent: 'center',
+              width: '200px',
+              height: '200px',
+              background: '#0f1419',
+              borderRadius: '32px',
             }}
           >
-            <div style={{ fontSize: '72px', fontWeight: 'bold', marginBottom: '8px' }}>台股</div>
-            <div style={{ fontSize: '48px', opacity: 0.8 }}>資產總覽</div>
+            {/* 箭頭 */}
+            <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+              <path
+                d="M60 20 L90 50 H72 V100 H48 V50 H30 Z"
+                fill="#d8b46e"
+              />
+              <rect x="30" y="85" width="60" height="25" rx="4" fill="#d8b46e" />
+            </svg>
+          </div>
+
+          {/* 標題 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div
+              style={{
+                fontSize: '82px',
+                fontWeight: 'bold',
+                color: '#0f1419',
+                lineHeight: 1,
+              }}
+            >
+              台股資產總覽
+            </div>
+            <div
+              style={{
+                fontSize: '36px',
+                color: 'rgba(15, 20, 25, 0.7)',
+                lineHeight: 1.3,
+              }}
+            >
+              即時投資組合管理
+            </div>
           </div>
         </div>
 
-        {/* 標題與描述 */}
+        {/* 右側:特色標籤 */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center',
-            color: '#aab6cc',
-            fontSize: '32px',
-          }}
-        >
-          <div style={{ marginBottom: '12px' }}>即時投資組合管理</div>
-          <div style={{ opacity: 0.7, fontSize: '28px' }}>PRIVATE WEALTH · 台股</div>
-        </div>
-
-        {/* 底部裝飾 */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '40px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            color: '#6f7a8f',
-            fontSize: '24px',
+            gap: '24px',
+            alignItems: 'flex-end',
           }}
         >
           <div
             style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              background: '#f06459',
+              background: '#0f1419',
+              color: '#d8b46e',
+              fontSize: '28px',
+              padding: '20px 40px',
+              borderRadius: '16px',
+              fontWeight: 500,
             }}
-          ></div>
-          <div>盤中即時更新</div>
+          >
+            ⚡ 盤中即時更新
+          </div>
+          <div
+            style={{
+              background: '#0f1419',
+              color: '#d8b46e',
+              fontSize: '28px',
+              padding: '20px 40px',
+              borderRadius: '16px',
+              fontWeight: 500,
+            }}
+          >
+            📊 資產配置分析
+          </div>
+          <div
+            style={{
+              background: '#0f1419',
+              color: '#d8b46e',
+              fontSize: '28px',
+              padding: '20px 40px',
+              borderRadius: '16px',
+              fontWeight: 500,
+            }}
+          >
+            📈 損益追蹤
+          </div>
         </div>
       </div>
     ),

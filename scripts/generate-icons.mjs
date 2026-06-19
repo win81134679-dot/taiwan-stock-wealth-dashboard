@@ -1,4 +1,4 @@
-// 生成 PWA 圖示 (使用 Canvas)
+// 生成 PWA 圖示 - 極簡風格 (參考 Google Material Design)
 import fs from 'fs';
 import { createCanvas } from 'canvas';
 
@@ -8,49 +8,51 @@ function generateIcon(size) {
   const canvas = createCanvas(size, size);
   const ctx = canvas.getContext('2d');
 
-  // 背景漸層
-  const gradient = ctx.createLinearGradient(0, 0, size, size);
-  gradient.addColorStop(0, '#0f1419');
-  gradient.addColorStop(1, '#1a1f29');
-  ctx.fillStyle = gradient;
+  // 純色背景 (品牌金色)
+  ctx.fillStyle = '#d8b46e';
   ctx.fillRect(0, 0, size, size);
 
-  // 中心圓環
+  // 極簡圖形:上升箭頭 + 方塊 (象徵台股上漲、資產增長)
   const centerX = size / 2;
   const centerY = size / 2;
-  const radius = size * 0.35;
-  const ringWidth = size * 0.06;
+  const iconSize = size * 0.5;
 
-  // 外環 (金色)
-  ctx.strokeStyle = 'rgba(216,180,110,0.4)';
-  ctx.lineWidth = ringWidth;
+  ctx.fillStyle = '#0f1419';
+
+  // 方塊底座 (象徵資產)
+  const rectWidth = iconSize * 0.65;
+  const rectHeight = iconSize * 0.35;
+  const rectX = centerX - rectWidth / 2;
+  const rectY = centerY + iconSize * 0.05;
+
   ctx.beginPath();
-  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-  ctx.stroke();
+  ctx.roundRect(rectX, rectY, rectWidth, rectHeight, size * 0.04);
+  ctx.fill();
 
-  // 內環 (紅色弧,象徵漲幅)
-  ctx.strokeStyle = '#f06459';
-  ctx.lineWidth = ringWidth * 0.6;
+  // 上升箭頭 (象徵台股漲勢)
+  const arrowWidth = iconSize * 0.45;
+  const arrowHeight = iconSize * 0.55;
+  const arrowX = centerX;
+  const arrowY = centerY - iconSize * 0.15;
+
   ctx.beginPath();
-  ctx.arc(centerX, centerY, radius - ringWidth, -Math.PI / 2, Math.PI / 2);
-  ctx.stroke();
-
-  // 中心文字
-  ctx.fillStyle = '#f4e3b8';
-  ctx.font = `bold ${size * 0.16}px sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('台股', centerX, centerY - size * 0.05);
-
-  ctx.font = `${size * 0.1}px sans-serif`;
-  ctx.fillStyle = 'rgba(244,227,184,0.7)';
-  ctx.fillText('資產', centerX, centerY + size * 0.08);
+  // 箭頭尖端
+  ctx.moveTo(arrowX, arrowY - arrowHeight / 2);
+  ctx.lineTo(arrowX + arrowWidth / 2, arrowY);
+  ctx.lineTo(arrowX + arrowWidth * 0.2, arrowY);
+  // 箭頭柄
+  ctx.lineTo(arrowX + arrowWidth * 0.2, arrowY + arrowHeight / 2);
+  ctx.lineTo(arrowX - arrowWidth * 0.2, arrowY + arrowHeight / 2);
+  ctx.lineTo(arrowX - arrowWidth * 0.2, arrowY);
+  ctx.lineTo(arrowX - arrowWidth / 2, arrowY);
+  ctx.closePath();
+  ctx.fill();
 
   // 儲存
   const buffer = canvas.toBuffer('image/png');
   fs.writeFileSync(`public/icon-${size}.png`, buffer);
-  console.log(`✓ Generated icon-${size}.png`);
+  console.log(`✓ Generated icon-${size}.png (minimalist style)`);
 }
 
 sizes.forEach(generateIcon);
-console.log('✓ All icons generated');
+console.log('✓ All icons generated - Simple & recognizable!');
