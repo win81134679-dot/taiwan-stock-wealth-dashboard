@@ -41,8 +41,9 @@ export default function TradeModal() {
 
   const discountLabel = feeDiscount === 1 ? '原價' : Math.round(feeDiscount * 10) + '折';
   const isBuy = modal.action === 'buy';
-  // 是否處於「新增持股」流程:尚未鎖定 code 且無下拉清單可選
-  const isNewHolding = !modal.code;
+  // 新增模式:目前的 code 不是已持有的股票(含查詢後尚未買進的標的)。
+  // 只有針對「已持有」股票交易時才顯示下拉選單。
+  const isNewHolding = !modal.code || !stocks[modal.code];
 
   const handleLookup = async () => {
     const raw = modal.lookupCode.trim();
