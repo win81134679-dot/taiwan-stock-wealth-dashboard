@@ -1,4 +1,4 @@
-// 生成 PWA 圖示 - 使用品牌鑽石 Logo
+// 生成 PWA 圖示 - 透明背景 + 加粗鑽石 Logo
 import fs from 'fs';
 import { createCanvas } from 'canvas';
 
@@ -8,15 +8,15 @@ function generateIcon(size) {
   const canvas = createCanvas(size, size);
   const ctx = canvas.getContext('2d');
 
-  // 深色背景 (與網站一致)
-  ctx.fillStyle = '#0a111d';
-  ctx.fillRect(0, 0, size, size);
+  // 透明背景 (去背)
+  ctx.clearRect(0, 0, size, size);
 
-  // 外圈 (金色圓環)
   const centerX = size / 2;
   const centerY = size / 2;
-  const outerRadius = size * 0.42;
-  const ringWidth = size * 0.015;
+
+  // 外圈 (金色圓環,加粗)
+  const outerRadius = size * 0.44;
+  const ringWidth = size * 0.028; // 加粗接近 2 倍
 
   ctx.strokeStyle = '#d8b46e';
   ctx.lineWidth = ringWidth;
@@ -24,52 +24,68 @@ function generateIcon(size) {
   ctx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
   ctx.stroke();
 
-  // 鑽石圖形 (金色)
-  const diamondSize = size * 0.32;
+  // 鑽石圖形 (金色,加粗)
+  const diamondSize = size * 0.38; // 稍微放大
   ctx.fillStyle = '#d8b46e';
 
+  // 上半部左三角
   ctx.beginPath();
-  // 上半部 (兩個三角形)
-  ctx.moveTo(centerX, centerY - diamondSize * 0.55); // 頂點
-  ctx.lineTo(centerX - diamondSize * 0.45, centerY - diamondSize * 0.1); // 左上
-  ctx.lineTo(centerX, centerY + diamondSize * 0.05); // 中心
+  ctx.moveTo(centerX, centerY - diamondSize * 0.58); // 頂點
+  ctx.lineTo(centerX - diamondSize * 0.48, centerY - diamondSize * 0.08); // 左上
+  ctx.lineTo(centerX, centerY + diamondSize * 0.08); // 中心
   ctx.closePath();
   ctx.fill();
 
+  // 上半部右三角
   ctx.beginPath();
-  ctx.moveTo(centerX, centerY - diamondSize * 0.55); // 頂點
-  ctx.lineTo(centerX + diamondSize * 0.45, centerY - diamondSize * 0.1); // 右上
-  ctx.lineTo(centerX, centerY + diamondSize * 0.05); // 中心
+  ctx.moveTo(centerX, centerY - diamondSize * 0.58); // 頂點
+  ctx.lineTo(centerX + diamondSize * 0.48, centerY - diamondSize * 0.08); // 右上
+  ctx.lineTo(centerX, centerY + diamondSize * 0.08); // 中心
   ctx.closePath();
   ctx.fill();
 
-  // 下半部 (鑽石底部)
+  // 下半部大三角
   ctx.beginPath();
-  ctx.moveTo(centerX - diamondSize * 0.45, centerY - diamondSize * 0.1); // 左
-  ctx.lineTo(centerX, centerY + diamondSize * 0.55); // 底點
-  ctx.lineTo(centerX + diamondSize * 0.45, centerY - diamondSize * 0.1); // 右
-  ctx.lineTo(centerX, centerY + diamondSize * 0.05); // 中心
+  ctx.moveTo(centerX - diamondSize * 0.48, centerY - diamondSize * 0.08); // 左
+  ctx.lineTo(centerX, centerY + diamondSize * 0.58); // 底點
+  ctx.lineTo(centerX + diamondSize * 0.48, centerY - diamondSize * 0.08); // 右
+  ctx.lineTo(centerX, centerY + diamondSize * 0.08); // 中心
   ctx.closePath();
   ctx.fill();
 
-  // 鑽石內部線條 (增加立體感)
-  ctx.strokeStyle = '#0a111d';
-  ctx.lineWidth = size * 0.008;
+  // 鑽石內部輪廓線 (深色,增加立體感與辨識度)
+  ctx.strokeStyle = 'rgba(15, 20, 25, 0.4)';
+  ctx.lineWidth = size * 0.012; // 加粗線條
+  ctx.lineJoin = 'miter';
+
+  // 中央垂直線
   ctx.beginPath();
-  ctx.moveTo(centerX, centerY - diamondSize * 0.55);
-  ctx.lineTo(centerX, centerY + diamondSize * 0.55);
+  ctx.moveTo(centerX, centerY - diamondSize * 0.58);
+  ctx.lineTo(centerX, centerY + diamondSize * 0.58);
   ctx.stroke();
 
+  // 中央水平線
   ctx.beginPath();
-  ctx.moveTo(centerX - diamondSize * 0.45, centerY - diamondSize * 0.1);
-  ctx.lineTo(centerX + diamondSize * 0.45, centerY - diamondSize * 0.1);
+  ctx.moveTo(centerX - diamondSize * 0.48, centerY - diamondSize * 0.08);
+  ctx.lineTo(centerX + diamondSize * 0.48, centerY - diamondSize * 0.08);
   ctx.stroke();
 
-  // 儲存
+  // 外輪廓描邊 (讓邊緣更清晰)
+  ctx.strokeStyle = '#d8b46e';
+  ctx.lineWidth = size * 0.006;
+  ctx.beginPath();
+  ctx.moveTo(centerX, centerY - diamondSize * 0.58);
+  ctx.lineTo(centerX - diamondSize * 0.48, centerY - diamondSize * 0.08);
+  ctx.lineTo(centerX, centerY + diamondSize * 0.58);
+  ctx.lineTo(centerX + diamondSize * 0.48, centerY - diamondSize * 0.08);
+  ctx.closePath();
+  ctx.stroke();
+
+  // 儲存為 PNG (支援透明)
   const buffer = canvas.toBuffer('image/png');
   fs.writeFileSync(`public/icon-${size}.png`, buffer);
-  console.log(`✓ Generated icon-${size}.png (diamond logo)`);
+  console.log(`✓ Generated icon-${size}.png (transparent, bold diamond)`);
 }
 
 sizes.forEach(generateIcon);
-console.log('✓ All icons generated - Brand diamond logo!');
+console.log('✓ All icons generated - Transparent background with bold logo!');
