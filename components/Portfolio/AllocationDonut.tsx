@@ -38,11 +38,11 @@ export default function AllocationDonut() {
   }, [holdings]);
 
   return (
-    <div className="rounded-3xl border border-[rgba(255,255,255,0.06)] bg-gradient-to-b from-[rgba(255,255,255,0.022)] to-transparent p-7">
+    <div className="rounded-3xl border border-[rgba(255,255,255,0.06)] bg-gradient-to-b from-[rgba(255,255,255,0.022)] to-transparent p-4 sm:p-7">
       <div className="font-serif text-lg text-[#e8edf4] tracking-wide mb-5">資產配置</div>
 
-      <div className="flex items-center gap-6">
-        <div className="relative w-[158px] h-[158px] flex-shrink-0">
+      <div className="flex items-center gap-5 sm:gap-6">
+        <div className="relative w-[140px] h-[140px] sm:w-[158px] sm:h-[158px] flex-shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie

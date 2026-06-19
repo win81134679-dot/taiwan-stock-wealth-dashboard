@@ -159,7 +159,7 @@ export default function HoldingsList() {
   }, [stocks, getPortfolioValue]);
 
   return (
-    <div className="rounded-3xl border border-[rgba(255,255,255,0.06)] bg-gradient-to-b from-[rgba(255,255,255,0.022)] to-transparent p-7">
+    <div className="rounded-3xl border border-[rgba(255,255,255,0.06)] bg-gradient-to-b from-[rgba(255,255,255,0.022)] to-transparent p-4 sm:p-7">
       <div className="flex justify-between items-center mb-4">
         <span className="font-serif text-lg text-[#e8edf4] tracking-wide">持倉明細</span>
         <div className="flex items-center gap-3">
@@ -190,33 +190,35 @@ export default function HoldingsList() {
         {holdings.map((holding) => (
           <div
             key={holding.code}
-            className="flex items-center gap-4 px-0.5 py-3 border-b border-[rgba(255,255,255,0.05)]"
+            className="flex items-center gap-2.5 sm:gap-4 px-0.5 py-3 border-b border-[rgba(255,255,255,0.05)]"
           >
-            <div className="relative w-[42px] h-[42px] flex-shrink-0">
+            <div className="relative w-[38px] h-[38px] sm:w-[42px] sm:h-[42px] flex-shrink-0">
               <RingCanvas fraction={holding.weightFrac} code={holding.code} />
               <div className="absolute inset-0 flex items-center justify-center font-mono font-medium text-xs text-[#9aa6ba]">
                 {holding.weight}
               </div>
             </div>
 
-            <div className="w-24 flex-shrink-0">
-              <div className="font-mono font-medium text-base text-[#e7ecf4]">{holding.code}</div>
-              <div className="text-[13px] text-[#aab6cc] mt-0.5">{holding.name}</div>
+            <div className="w-[68px] sm:w-24 flex-shrink-0">
+              <div className="font-mono font-medium text-[15px] sm:text-base text-[#e7ecf4]">{holding.code}</div>
+              <div className="text-[12px] sm:text-[13px] text-[#aab6cc] mt-0.5 truncate">{holding.name}</div>
             </div>
 
-            <SparklineCanvas history={holding.history} code={holding.code} />
+            <div className="hidden sm:block">
+              <SparklineCanvas history={holding.history} code={holding.code} />
+            </div>
 
-            <div className="flex-1 text-right">
-              <div className="font-mono font-medium text-base text-[#dbe2ee] tabular-nums">{holding.price}</div>
+            <div className="flex-1 text-right min-w-0">
+              <div className="font-mono font-medium text-[15px] sm:text-base text-[#dbe2ee] tabular-nums">{holding.price}</div>
               <div
-                className="font-mono font-medium text-[13.5px] tabular-nums mt-0.5"
+                className="font-mono font-medium text-[12.5px] sm:text-[13.5px] tabular-nums mt-0.5"
                 style={{ color: holding.changeColor }}
               >
                 {holding.changePct}
               </div>
             </div>
 
-            <div className="w-24 text-right">
+            <div className="hidden md:block w-24 text-right">
               <div className="font-mono font-medium text-[15px] text-[#c2cce0] tabular-nums">{holding.value}</div>
               <div
                 className="font-mono font-medium text-xs tabular-nums mt-0.5"
@@ -226,7 +228,7 @@ export default function HoldingsList() {
               </div>
             </div>
 
-            <div className="flex gap-1.5 flex-shrink-0">
+            <div className="flex gap-1 sm:gap-1.5 flex-shrink-0">
               <button
                 onClick={() => openModal(holding.code, 'buy')}
                 title="加倉"

@@ -24,8 +24,10 @@ export default function AssetRing({ totalValue, todayPnl, todayPct, cumulativeRe
     if (!ctx) return;
 
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const w = 332;
-    const h = 332;
+    // 以實際渲染尺寸繪製,支援響應式(手機較小)
+    const size = canvas.clientWidth || 332;
+    const w = size;
+    const h = size;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     ctx.scale(dpr, dpr);
@@ -106,13 +108,13 @@ export default function AssetRing({ totalValue, todayPnl, todayPct, cumulativeRe
   const todayBorder = todayPnl >= 0 ? 'rgba(214,95,87,0.32)' : 'rgba(63,174,132,0.32)';
 
   return (
-    <div className="rounded-3xl border border-[rgba(216,180,110,0.22)] bg-gradient-to-b from-[rgba(216,180,110,0.10)] via-transparent to-transparent p-8 shadow-[inset_0_1px_0_rgba(244,227,184,0.18),_0_22px_54px_rgba(0,0,0,0.38)]">
-      <div className="relative w-[332px] h-[332px] mx-auto">
-        <canvas ref={canvasRef} width={332} height={332} className="w-full h-full block" />
+    <div className="rounded-3xl border border-[rgba(216,180,110,0.22)] bg-gradient-to-b from-[rgba(216,180,110,0.10)] via-transparent to-transparent p-5 sm:p-8 shadow-[inset_0_1px_0_rgba(244,227,184,0.18),_0_22px_54px_rgba(0,0,0,0.38)]">
+      <div className="relative w-full max-w-[300px] sm:max-w-[332px] aspect-square mx-auto">
+        <canvas ref={canvasRef} className="w-full h-full block" />
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <div className="text-sm tracking-[0.22em] text-[#aab6cc] mb-3">總資產淨值 ・ TWD</div>
-          <div className="font-serif font-semibold text-[44px] leading-none text-[#f0f4fa] tabular-nums tracking-tight">
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-4">
+          <div className="text-[13px] sm:text-sm tracking-[0.22em] text-[#aab6cc] mb-2 sm:mb-3">總資產淨值 ・ TWD</div>
+          <div className="font-serif font-semibold text-[clamp(2rem,9vw,44px)] leading-none text-[#f0f4fa] tabular-nums tracking-tight">
             {formatCurrency(totalValue)}
           </div>
           <div

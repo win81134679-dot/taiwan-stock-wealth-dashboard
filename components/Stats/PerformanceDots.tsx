@@ -33,8 +33,8 @@ export default function PerformanceDots() {
   const placeholders = Math.max(0, 30 - dots.length);
 
   return (
-    <div className="rounded-3xl border border-[rgba(255,255,255,0.06)] bg-gradient-to-b from-[rgba(255,255,255,0.022)] to-transparent p-6 mb-6">
-      <div className="flex justify-between items-center mb-5">
+    <div className="rounded-3xl border border-[rgba(255,255,255,0.06)] bg-gradient-to-b from-[rgba(255,255,255,0.022)] to-transparent p-4 sm:p-6 mb-4 sm:mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0 mb-4 sm:mb-5">
         <div className="font-serif text-lg text-[#e8edf4] tracking-wide">
           近 30 日績效
           {dots.length < 30 && (
@@ -42,7 +42,7 @@ export default function PerformanceDots() {
           )}
         </div>
 
-        <div className="flex items-center gap-5 text-[13px] text-[#aab6cc]">
+        <div className="flex items-center flex-wrap gap-x-4 gap-y-1 sm:gap-5 text-[12px] sm:text-[13px] text-[#aab6cc]">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[#d65f57]"></span>上漲 {upDays} 天
           </span>
@@ -58,18 +58,18 @@ export default function PerformanceDots() {
         </div>
       </div>
 
-      <div className="flex justify-between items-center">
+      <div className="flex items-center gap-[2px] sm:gap-1.5">
         {dots.map((dot, i) => (
           <div
             key={i}
-            className="w-[30px] h-[30px] flex-shrink-0 rounded-full border"
+            className="flex-1 max-w-[30px] aspect-square rounded-full border"
             style={{ background: dot.bg, borderColor: dot.bd }}
           ></div>
         ))}
         {Array.from({ length: placeholders }).map((_, i) => (
           <div
             key={`ph-${i}`}
-            className="w-[30px] h-[30px] flex-shrink-0 rounded-full border border-[rgba(255,255,255,0.04)] bg-[rgba(255,255,255,0.015)]"
+            className="flex-1 max-w-[30px] aspect-square rounded-full border border-[rgba(255,255,255,0.04)] bg-[rgba(255,255,255,0.015)]"
           ></div>
         ))}
       </div>

@@ -127,7 +127,7 @@ export default function Home() {
   }
 
   return (
-    <div className="relative overflow-hidden min-h-screen bg-[radial-gradient(140%_120%_at_50%_-20%,_#0f1a2c_0%,_#0a111d_55%,_#070c16_100%)] px-10 py-12">
+    <div className="relative overflow-hidden min-h-screen bg-[radial-gradient(140%_120%_at_50%_-20%,_#0f1a2c_0%,_#0a111d_55%,_#070c16_100%)] px-4 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-12">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute right-[-110px] top-5 w-[540px] h-[540px] opacity-5">
           <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none">
@@ -145,7 +145,7 @@ export default function Home() {
 
         <BackupBar />
 
-        <div className="grid grid-cols-[392px_1fr] gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[392px_1fr] gap-4 sm:gap-6 mb-4 sm:mb-6">
           <AssetRing
             totalValue={stats.totalValue}
             todayPnl={stats.dayPnl}
@@ -156,7 +156,7 @@ export default function Home() {
           <NetWorthTrend />
         </div>
 
-        <div className="grid grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-4 sm:mb-6">
           {statCards.map((card) => {
             const { key, ...cardProps } = card;
             return <StatCard key={key} {...cardProps} />;
@@ -165,7 +165,7 @@ export default function Home() {
 
         <PerformanceDots />
 
-        <div className="grid grid-cols-[392px_1fr] gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[392px_1fr] gap-4 sm:gap-6 mb-4 sm:mb-6">
           <AllocationDonut />
           <HoldingsList />
         </div>

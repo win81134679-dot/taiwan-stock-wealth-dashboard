@@ -37,8 +37,10 @@ export default function StatCard({
     if (!ctx) return;
 
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const w = 74;
-    const h = 74;
+    // 以實際渲染尺寸繪製,支援響應式(手機較小)
+    const size = canvas.clientWidth || 74;
+    const w = size;
+    const h = size;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     ctx.scale(dpr, dpr);
@@ -94,25 +96,25 @@ export default function StatCard({
 
   return (
     <div
-      className="rounded-[22px] border p-5 flex items-center gap-5"
+      className="rounded-[22px] border p-3.5 sm:p-5 flex items-center gap-3 sm:gap-5"
       style={{
         borderColor: cardBorder,
         background: cardBg,
       }}
     >
-      <div className="relative w-[74px] h-[74px] flex-shrink-0">
-        <canvas ref={canvasRef} width={74} height={74} className="w-full h-full block" />
+      <div className="relative w-14 h-14 sm:w-[74px] sm:h-[74px] flex-shrink-0">
+        <canvas ref={canvasRef} className="w-full h-full block" />
         <div
-          className="absolute inset-0 flex items-center justify-center font-mono font-medium text-sm tabular-nums"
+          className="absolute inset-0 flex items-center justify-center font-mono font-medium text-xs sm:text-sm tabular-nums"
           style={{ color: badgeColor }}
         >
           {badge}
         </div>
       </div>
 
-      <div>
-        <div className="text-sm tracking-[0.1em] text-[#aab6cc] mb-2">{label}</div>
-        <div className="font-mono font-medium text-2xl tabular-nums" style={{ color: valueColor }}>
+      <div className="min-w-0">
+        <div className="text-[13px] sm:text-sm tracking-[0.1em] text-[#aab6cc] mb-1.5 sm:mb-2 truncate">{label}</div>
+        <div className="font-mono font-medium text-xl sm:text-2xl tabular-nums" style={{ color: valueColor }}>
           {value}
         </div>
       </div>

@@ -66,8 +66,8 @@ export default function TradeModal() {
   if (!modal.open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(5,9,16,0.68)] backdrop-blur-sm">
-      <div className="w-[432px] rounded-3xl border border-[rgba(216,180,110,0.22)] bg-gradient-to-b from-[#111d31] to-[#0b1322] shadow-[0_36px_90px_rgba(0,0,0,0.62)] p-7">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(5,9,16,0.68)] backdrop-blur-sm p-4">
+      <div className="w-full max-w-[432px] max-h-[90vh] overflow-y-auto rounded-3xl border border-[rgba(216,180,110,0.22)] bg-gradient-to-b from-[#111d31] to-[#0b1322] shadow-[0_36px_90px_rgba(0,0,0,0.62)] p-5 sm:p-7">
         <div className="flex justify-between items-center mb-6">
           <span className="font-serif text-lg text-[#eef2f8] tracking-wide">交易 ・ 委託試算</span>
           <button

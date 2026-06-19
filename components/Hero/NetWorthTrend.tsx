@@ -53,7 +53,7 @@ export default function NetWorthTrend() {
   const hasData = data.length >= 2;
 
   return (
-    <div className="rounded-3xl border border-[rgba(255,255,255,0.06)] bg-gradient-to-b from-[rgba(255,255,255,0.022)] to-transparent p-7 flex flex-col">
+    <div className="rounded-3xl border border-[rgba(255,255,255,0.06)] bg-gradient-to-b from-[rgba(255,255,255,0.022)] to-transparent p-4 sm:p-7 flex flex-col">
       <div className="flex justify-between items-center mb-2">
         <div>
           <div className="font-serif text-lg text-[#e8edf4] tracking-wide">淨值走勢</div>

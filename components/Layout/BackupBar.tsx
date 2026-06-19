@@ -67,7 +67,7 @@ export default function BackupBar() {
     'px-3 py-1.5 rounded-full border border-[rgba(255,255,255,0.1)] bg-transparent text-[#aab6cc] text-[12.5px] cursor-pointer hover:bg-[rgba(255,255,255,0.04)] transition-colors';
 
   return (
-    <div className="flex items-center justify-end gap-2 mb-5 -mt-4">
+    <div className="flex flex-wrap items-center justify-end gap-2 mb-5 sm:-mt-4">
       <div className="flex items-center gap-2 mr-auto">
         <span className="text-[12.5px] text-[#8d99af]">現金部位</span>
         {editingCash ? (
