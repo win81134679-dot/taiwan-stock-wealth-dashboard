@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '@/lib/store';
 import { COLOR } from '@/lib/types';
 import { formatPercent, formatSignedCurrency, getColor } from '@/lib/calculator';
+import { registerServiceWorker } from '@/lib/register-sw';
 import Header from '@/components/Layout/Header';
 import NewsTicker from '@/components/Layout/NewsTicker';
 import AssetRing from '@/components/Hero/AssetRing';
@@ -14,6 +15,7 @@ import AllocationDonut from '@/components/Portfolio/AllocationDonut';
 import HoldingsList from '@/components/Portfolio/HoldingsList';
 import TradeModal from '@/components/Trade/TradeModal';
 import BackupBar from '@/components/Layout/BackupBar';
+import InstallPrompt from '@/components/PWA/InstallPrompt';
 import { useQuotes } from '@/lib/hooks/useQuotes';
 
 export default function Home() {
@@ -30,6 +32,8 @@ export default function Home() {
     setMounted(true);
     // 啟動時拉雲端持倉與每日快照(雲端為權威來源)
     loadFromCloud();
+    // 註冊 Service Worker (PWA)
+    registerServiceWorker();
   }, [loadFromCloud]);
 
   // 真實報價輪詢(盤中 30 秒;只在 mounted 後啟動)
@@ -172,6 +176,8 @@ export default function Home() {
 
         <NewsTicker />
       </div>
+
+      <InstallPrompt />
 
       <TradeModal />
     </div>

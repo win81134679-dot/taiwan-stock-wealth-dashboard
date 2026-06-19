@@ -1,0 +1,27 @@
+{
+  "name": "台股資產總覽",
+  "short_name": "台股資產",
+  "description": "即時台股投資組合管理儀表板 - 追蹤資產、損益、配置",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1419",
+  "theme_color": "#d8b46e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity"],
+  "lang": "zh-TW",
+  "dir": "ltr"
+}
