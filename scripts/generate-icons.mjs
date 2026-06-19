@@ -1,4 +1,4 @@
-// 生成 PWA 圖示 - 極簡風格 (參考 Google Material Design)
+// 生成 PWA 圖示 - 使用品牌鑽石 Logo
 import fs from 'fs';
 import { createCanvas } from 'canvas';
 
@@ -8,51 +8,68 @@ function generateIcon(size) {
   const canvas = createCanvas(size, size);
   const ctx = canvas.getContext('2d');
 
-  // 純色背景 (品牌金色)
-  ctx.fillStyle = '#d8b46e';
+  // 深色背景 (與網站一致)
+  ctx.fillStyle = '#0a111d';
   ctx.fillRect(0, 0, size, size);
 
-  // 極簡圖形:上升箭頭 + 方塊 (象徵台股上漲、資產增長)
+  // 外圈 (金色圓環)
   const centerX = size / 2;
   const centerY = size / 2;
-  const iconSize = size * 0.5;
+  const outerRadius = size * 0.42;
+  const ringWidth = size * 0.015;
 
-  ctx.fillStyle = '#0f1419';
+  ctx.strokeStyle = '#d8b46e';
+  ctx.lineWidth = ringWidth;
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
+  ctx.stroke();
 
-  // 方塊底座 (象徵資產)
-  const rectWidth = iconSize * 0.65;
-  const rectHeight = iconSize * 0.35;
-  const rectX = centerX - rectWidth / 2;
-  const rectY = centerY + iconSize * 0.05;
+  // 鑽石圖形 (金色)
+  const diamondSize = size * 0.32;
+  ctx.fillStyle = '#d8b46e';
 
   ctx.beginPath();
-  ctx.roundRect(rectX, rectY, rectWidth, rectHeight, size * 0.04);
-  ctx.fill();
-
-  // 上升箭頭 (象徵台股漲勢)
-  const arrowWidth = iconSize * 0.45;
-  const arrowHeight = iconSize * 0.55;
-  const arrowX = centerX;
-  const arrowY = centerY - iconSize * 0.15;
-
-  ctx.beginPath();
-  // 箭頭尖端
-  ctx.moveTo(arrowX, arrowY - arrowHeight / 2);
-  ctx.lineTo(arrowX + arrowWidth / 2, arrowY);
-  ctx.lineTo(arrowX + arrowWidth * 0.2, arrowY);
-  // 箭頭柄
-  ctx.lineTo(arrowX + arrowWidth * 0.2, arrowY + arrowHeight / 2);
-  ctx.lineTo(arrowX - arrowWidth * 0.2, arrowY + arrowHeight / 2);
-  ctx.lineTo(arrowX - arrowWidth * 0.2, arrowY);
-  ctx.lineTo(arrowX - arrowWidth / 2, arrowY);
+  // 上半部 (兩個三角形)
+  ctx.moveTo(centerX, centerY - diamondSize * 0.55); // 頂點
+  ctx.lineTo(centerX - diamondSize * 0.45, centerY - diamondSize * 0.1); // 左上
+  ctx.lineTo(centerX, centerY + diamondSize * 0.05); // 中心
   ctx.closePath();
   ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(centerX, centerY - diamondSize * 0.55); // 頂點
+  ctx.lineTo(centerX + diamondSize * 0.45, centerY - diamondSize * 0.1); // 右上
+  ctx.lineTo(centerX, centerY + diamondSize * 0.05); // 中心
+  ctx.closePath();
+  ctx.fill();
+
+  // 下半部 (鑽石底部)
+  ctx.beginPath();
+  ctx.moveTo(centerX - diamondSize * 0.45, centerY - diamondSize * 0.1); // 左
+  ctx.lineTo(centerX, centerY + diamondSize * 0.55); // 底點
+  ctx.lineTo(centerX + diamondSize * 0.45, centerY - diamondSize * 0.1); // 右
+  ctx.lineTo(centerX, centerY + diamondSize * 0.05); // 中心
+  ctx.closePath();
+  ctx.fill();
+
+  // 鑽石內部線條 (增加立體感)
+  ctx.strokeStyle = '#0a111d';
+  ctx.lineWidth = size * 0.008;
+  ctx.beginPath();
+  ctx.moveTo(centerX, centerY - diamondSize * 0.55);
+  ctx.lineTo(centerX, centerY + diamondSize * 0.55);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(centerX - diamondSize * 0.45, centerY - diamondSize * 0.1);
+  ctx.lineTo(centerX + diamondSize * 0.45, centerY - diamondSize * 0.1);
+  ctx.stroke();
 
   // 儲存
   const buffer = canvas.toBuffer('image/png');
   fs.writeFileSync(`public/icon-${size}.png`, buffer);
-  console.log(`✓ Generated icon-${size}.png (minimalist style)`);
+  console.log(`✓ Generated icon-${size}.png (diamond logo)`);
 }
 
 sizes.forEach(generateIcon);
-console.log('✓ All icons generated - Simple & recognizable!');
+console.log('✓ All icons generated - Brand diamond logo!');
