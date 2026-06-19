@@ -80,7 +80,8 @@ export default function AssetRing({ totalValue, todayPnl, todayPct, cumulativeRe
     drawArc(R, retFrac, COLOR.BRASS, 5);
 
     const R2 = R - 15;
-    const dayFrac = Math.max(0, Math.min(1, Math.abs(todayPct) / 3)) * progress;
+    // 內環(今日損益率):漲跌 10% 為滿圈
+    const dayFrac = Math.max(0, Math.min(1, Math.abs(todayPct) / 10)) * progress;
     const dayColor = todayPnl >= 0 ? COLOR.UP : COLOR.DOWN;
     drawArc(R2, dayFrac, dayColor, 3);
 
