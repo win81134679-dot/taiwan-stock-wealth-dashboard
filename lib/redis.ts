@@ -1,11 +1,20 @@
 // Upstash Redis client + 雲端 portfolio 讀寫(伺服器端,單一使用者單一 key)
-// 環境變數 UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN 由 Vercel 整合自動注入。
+// Vercel Upstash 整合注入的變數可能是 KV_REST_API_URL/KV_REST_API_TOKEN(KV 格式)
+// 或 UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN(Upstash 格式),兩者都相容。
 
 import { Redis } from '@upstash/redis';
 import { Holding } from './types';
 import { NavSnapshot, upsertSnapshot, taipeiToday } from './snapshots';
 
 const PORTFOLIO_KEY = 'portfolio:default';
+
+function getRedisUrl(): string | undefined {
+  return process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+}
+
+function getRedisToken(): string | undefined {
+  return process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+}
 
 export interface CloudPortfolio {
   holdings: Record<string, Holding>;
@@ -27,18 +36,19 @@ export function emptyPortfolio(): CloudPortfolio {
   };
 }
 
-// 是否已設定 Upstash env(未設定時 API 會回明確錯誤,不致整站崩潰)
+// 是否已設定 Redis env(未設定時 API 會回明確錯誤,不致整站崩潰)
 export function isRedisConfigured(): boolean {
-  return Boolean(
-    process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-  );
+  return Boolean(getRedisUrl() && getRedisToken());
 }
 
 let cachedClient: Redis | null = null;
 
 function getClient(): Redis {
   if (!cachedClient) {
-    cachedClient = Redis.fromEnv();
+    cachedClient = new Redis({
+      url: getRedisUrl()!,
+      token: getRedisToken()!,
+    });
   }
   return cachedClient;
 }
