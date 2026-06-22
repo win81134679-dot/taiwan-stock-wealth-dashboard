@@ -1,10 +1,10 @@
 'use client';
 
 import { useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip } from 'recharts';
 import { useStore } from '@/lib/store';
 import { COLOR } from '@/lib/types';
-import { formatPercent, getColor } from '@/lib/calculator';
+import { formatPercent, formatCurrency, getColor } from '@/lib/calculator';
 import { buildIntradayNav } from '@/lib/intraday';
 import { taipeiToday } from '@/lib/snapshots';
 
@@ -140,6 +140,24 @@ export default function NetWorthTrend() {
                 }}
                 domain={['dataMin', 'dataMax']}
                 width={44}
+              />
+
+              <Tooltip
+                cursor={{ stroke: 'rgba(230,196,120,0.45)', strokeWidth: 1, strokeDasharray: '3 3' }}
+                contentStyle={{
+                  background: 'rgba(11,19,34,0.96)',
+                  border: '1px solid rgba(216,180,110,0.32)',
+                  borderRadius: 12,
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
+                  padding: '8px 12px',
+                }}
+                labelFormatter={() => ''}
+                itemStyle={{ color: '#f0dcae', fontFamily: 'IBM Plex Mono', fontSize: 13, padding: 0 }}
+                formatter={(value) => {
+                  const v = Number(value);
+                  const pct = baseValue > 0 ? (v / baseValue - 1) * 100 : 0;
+                  return [`${formatCurrency(v)}  (${formatPercent(pct)})`, '淨值'];
+                }}
               />
 
               <ReferenceLine

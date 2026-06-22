@@ -99,16 +99,19 @@ export default function Home() {
       cardBorder: 'rgba(216,180,110,0.22)',
     },
     {
-      key: 'cash',
-      label: '現金水位',
-      value: stats.cashPct.toFixed(1) + '%',
-      valueColor: '#aebcd2',
-      badge: Math.round(stats.cashPct) + '%',
-      badgeColor: '#9fb0c8',
-      ringFraction: Math.min(1, stats.cashPct / 100),
-      ringColor: '#6f93c0',
-      cardBg: 'linear-gradient(180deg, rgba(255,255,255,0.022), rgba(255,255,255,0))',
-      cardBorder: 'rgba(255,255,255,0.06)',
+      key: 'unrealized',
+      label: '未實現損益',
+      value: formatSignedCurrency(stats.pnl),
+      valueColor: getColor(stats.pnl, COLOR.UP, COLOR.DOWN, COLOR.FLAT),
+      badge: stats.pnl >= 0 ? '▲' : '▼',
+      badgeColor: getColor(stats.pnl, COLOR.UP, COLOR.DOWN, COLOR.FLAT),
+      ringFraction: Math.min(1, Math.abs(stats.cumulativeReturn) / 30),
+      ringColor: getColor(stats.pnl, COLOR.UP, COLOR.DOWN, COLOR.FLAT),
+      cardBg:
+        stats.pnl >= 0
+          ? 'linear-gradient(180deg, rgba(214,95,87,0.10), rgba(214,95,87,0))'
+          : 'linear-gradient(180deg, rgba(63,174,132,0.10), rgba(63,174,132,0))',
+      cardBorder: stats.pnl >= 0 ? 'rgba(214,95,87,0.24)' : 'rgba(63,174,132,0.24)',
     },
     {
       key: 'realized',
