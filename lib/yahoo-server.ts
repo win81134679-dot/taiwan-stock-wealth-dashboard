@@ -12,7 +12,8 @@ export interface RawQuote {
   prevClose: number;   // 昨收
   currency: string;
   marketState: string; // REGULAR / CLOSED / PRE / POST 等
-  intraday: number[];  // 當日分鐘級收盤序列(去除 null)
+  lastTime: number;    // 最新成交時間(epoch 秒;用於判斷報價屬哪個交易日)
+  intraday: number[];  // 當日分鐘級收盤序列(前向填補 null,時間軸對齊)
 }
 
 export interface QuoteError {
@@ -27,6 +28,7 @@ interface YahooChartMeta {
   previousClose?: number;
   currency?: string;
   marketState?: string;
+  regularMarketTime?: number;
   longName?: string;
   shortName?: string;
   instrumentType?: string;
@@ -61,17 +63,26 @@ function parseChart(code: string, json: unknown): RawQuote | null {
     return null;
   }
 
+  const prevClose = meta.chartPreviousClose ?? meta.previousClose ?? meta.regularMarketPrice;
   const closes = result?.indicators?.quote?.[0]?.close ?? [];
-  const intraday = closes.filter((v): v is number => typeof v === 'number');
+  // 前向填補 null:保留完整分鐘格點並對齊時間軸(leading null 以昨收墊底),
+  // 讓多檔持股能以相同 index 加權合成今日 NAV 曲線。
+  const intraday: number[] = [];
+  let lastClose = prevClose;
+  for (const c of closes) {
+    if (typeof c === 'number') lastClose = c;
+    intraday.push(lastClose);
+  }
 
   return {
     code,
     symbol: meta.symbol,
     name: meta.longName || meta.shortName || meta.symbol,
     price: meta.regularMarketPrice,
-    prevClose: meta.chartPreviousClose ?? meta.previousClose ?? meta.regularMarketPrice,
+    prevClose,
     currency: meta.currency ?? 'TWD',
     marketState: meta.marketState ?? 'CLOSED',
+    lastTime: meta.regularMarketTime ?? 0,
     intraday: intraday.length > 0 ? intraday : [meta.regularMarketPrice],
   };
 }

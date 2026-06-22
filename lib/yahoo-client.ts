@@ -8,6 +8,7 @@ export interface ClientQuote {
   prevClose: number;
   currency: string;
   marketState: string;
+  lastTime: number;
   intraday: number[];
 }
 

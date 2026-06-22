@@ -49,8 +49,11 @@ export function useQuotes() {
       const quotes = await fetchQuotes(currentCodes);
       if (quotes.length > 0) {
         applyQuotes(quotes);
+        // 只在成功取得報價後才記錄淨值;失敗的輪詢不寫入,避免曲線跳動
+        recordNav();
+      } else {
+        setError('報價暫時無法取得');
       }
-      recordNav();
     } catch {
       setError('報價暫時無法取得');
     } finally {

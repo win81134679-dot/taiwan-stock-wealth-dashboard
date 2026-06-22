@@ -5,6 +5,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Refe
 import { useStore } from '@/lib/store';
 import { COLOR } from '@/lib/types';
 import { formatPercent, getColor } from '@/lib/calculator';
+import { buildIntradayNav } from '@/lib/intraday';
+import { taipeiToday } from '@/lib/snapshots';
 
 const RANGE_DAYS: Record<string, number> = {
   '1D': 0,
@@ -13,20 +15,44 @@ const RANGE_DAYS: Record<string, number> = {
   '1Y': 250,
 };
 
+const PRE_OPEN_MIN = 8 * 60 + 30; // 08:30:此前清空今日走勢(新交易日重新開始)
+
+// 台北時區「現在」的當日分鐘數(00:00 起算)
+function taipeiNowMinutes(): number {
+  const hhmm = new Date().toLocaleTimeString('en-GB', {
+    timeZone: 'Asia/Taipei',
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+
 export default function NetWorthTrend() {
   const timeRange = useStore((s) => s.timeRange);
   const setTimeRange = useStore((s) => s.setTimeRange);
-  const intradayNav = useStore((s) => s.intradayNav);
+  const holdings = useStore((s) => s.holdings);
+  const cash = useStore((s) => s.cash);
+  const quotesDate = useStore((s) => s.quotesDate);
+  const lastUpdated = useStore((s) => s.lastUpdated);
   const snapshots = useStore((s) => s.snapshots);
 
   const { data, baseValue, dataNote } = useMemo(() => {
     if (timeRange === '1D') {
-      const series = intradayNav.length >= 2 ? intradayNav : intradayNav;
-      const base = series[0] ?? 0;
+      // 今日真實走勢:用各持股今日分鐘序列加權合成(lib/intraday.ts)
+      const { series, base } = buildIntradayNav(holdings, cash);
+      const afterPreOpen = taipeiNowMinutes() >= PRE_OPEN_MIN; // 08:30 後才顯示
+      const isToday = quotesDate === taipeiToday(); // 報價須屬今日交易日(防殘留昨日)
+      const ready = afterPreOpen && isToday && series.length >= 2;
       return {
-        data: series.map((value, index) => ({ index, value })),
+        data: ready ? series.map((value, index) => ({ index, value })) : [],
         baseValue: base,
-        dataNote: series.length < 2 ? '盤中淨值累積中…' : '',
+        dataNote: ready
+          ? '今日即時走勢'
+          : !afterPreOpen
+          ? '尚未開盤 ・ 08:30 後顯示今日走勢'
+          : '等待今日開盤資料…',
       };
     }
 
@@ -45,7 +71,7 @@ export default function NetWorthTrend() {
       baseValue: base,
       dataNote: note,
     };
-  }, [timeRange, intradayNav, snapshots]);
+  }, [timeRange, holdings, cash, quotesDate, lastUpdated, snapshots]);
 
   const currentValue = data[data.length - 1]?.value ?? 0;
   const returnPct = baseValue > 0 ? (currentValue / baseValue - 1) * 100 : 0;

@@ -16,6 +16,11 @@ export function taipeiToday(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
 }
 
+// 由 epoch 秒數換算台北時區日期字串(判斷報價屬於哪個交易日)
+export function taipeiDateFromEpoch(sec: number): string {
+  return new Date(sec * 1000).toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+}
+
 export function loadSnapshots(): NavSnapshot[] {
   if (typeof window === 'undefined') return [];
   try {

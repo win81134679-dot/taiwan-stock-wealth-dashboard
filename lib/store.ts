@@ -4,7 +4,7 @@ import { Holding, TradeModalState } from './types';
 import { calculateTradeCost } from './calculator';
 import { getStockMeta } from './stock-names';
 import { ClientQuote } from './yahoo-client';
-import { recordSnapshot, NavSnapshot, loadSnapshots } from './snapshots';
+import { recordSnapshot, NavSnapshot, loadSnapshots, taipeiDateFromEpoch } from './snapshots';
 import { loadCloudPortfolio, saveCloudPortfolio } from './portfolio-client';
 
 interface StoreState {
@@ -12,7 +12,7 @@ interface StoreState {
   cash: number;
   realized: number;
   snapshots: NavSnapshot[];
-  intradayNav: number[];
+  quotesDate: string; // 最新報價所屬的台北交易日(今日走勢據此判斷新舊)
 
   timeRange: '1D' | '1W' | '1M' | '1Y';
   feeDiscount: number;
@@ -56,6 +56,7 @@ interface PersistedState {
   realized: number;
   snapshots: NavSnapshot[];
   feeDiscount: number;
+  quotesDate: string;
 }
 
 const EMPTY_MODAL: TradeModalState = {
@@ -77,7 +78,7 @@ export const useStore = create<StoreState>()(
       cash: 0,
       realized: 0,
       snapshots: [],
-      intradayNav: [],
+      quotesDate: '',
       timeRange: '1D',
       feeDiscount: 0.6,
       modal: { ...EMPTY_MODAL },
@@ -280,18 +281,26 @@ export const useStore = create<StoreState>()(
               };
             }
           });
-          return { holdings: newHoldings, lastUpdated: Date.now() };
+          // 取最新一筆報價成交時間,換算成台北交易日:今日走勢只在此日==今天時顯示
+          const latest = quotes.reduce((max, q) => (q.lastTime > max ? q.lastTime : max), 0);
+          const quotesDate = latest > 0 ? taipeiDateFromEpoch(latest) : state.quotesDate;
+          return { holdings: newHoldings, lastUpdated: Date.now(), quotesDate };
         });
       },
 
       recordNav: () => {
-        const value = get().getPortfolioValue();
+        const state = get();
+        // 每檔持倉都需有真實報價(price>0)才記錄;只要有一檔還在用成本價/未取價,
+        // 就跳過這次,避免淨值在「成本價 ↔ 市價」間暴跳而畫不出平滑曲線。
+        const holdings = Object.values(state.holdings);
+        if (holdings.some((h) => !(h.price > 0))) return;
+
+        const value = state.getPortfolioValue();
         if (value <= 0) return;
-        const snapshots = recordSnapshot(value);
-        set((state) => {
-          const intraday = [...state.intradayNav, value].slice(-200);
-          return { snapshots, intradayNav: intraday };
-        });
+
+        // 記錄當日「每日淨值快照」(供 1W/1M/1Y 長期走勢);今日盤中曲線改由
+        // lib/intraday.ts 直接用各持股分鐘序列合成,不再於此累積。
+        set({ snapshots: recordSnapshot(value) });
       },
 
       resetAll: () => {
@@ -300,7 +309,6 @@ export const useStore = create<StoreState>()(
           cash: 0,
           realized: 0,
           snapshots: [],
-          intradayNav: [],
           modal: { ...EMPTY_MODAL },
         });
         get().syncToCloud();
@@ -356,6 +364,7 @@ export const useStore = create<StoreState>()(
         realized: state.realized,
         snapshots: state.snapshots,
         feeDiscount: state.feeDiscount,
+        quotesDate: state.quotesDate,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
